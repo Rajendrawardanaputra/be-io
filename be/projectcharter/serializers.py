@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from .models import ProjectCharter, User
+from .models import ProjectCharter, User, ActivityLog
 import datetime
+import json
+from django.shortcuts import get_object_or_404
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,6 +18,28 @@ class ProjectCharterSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['status_project', 'iwo']
 
+    def validate(self, data):
+        project_name = data.get('project_name', '')
+        project_manager = data.get('project_manager', '')
+        customer = data.get('customer', '')
+        end_customer = data.get('end_customer', '')
+        bu_delivery = data.get('bu_delivery', '')
+        bu_related = data.get('bu_related', '')
+        project_description = data.get('project_description', '')
+        id_user = data.get('id_user')
+
+        # Tentukan field-field yang diperlukan
+        required_fields = [project_name, project_manager, customer, end_customer, bu_delivery, bu_related, project_description]
+
+        if any(field == '' for field in required_fields) or id_user is None:
+            # Jika setidaknya satu field kosong atau id_user kosong, atur status_project ke 'draft'
+            data['status_project'] = 'draft'
+        else:
+            # Jika semua field terisi, atur status_project ke 'done'
+            data['status_project'] = 'done'
+
+        return data
+
 
     def create(self, validated_data):
         # Hapus 'iwo' dari validated_data
@@ -28,13 +52,14 @@ class ProjectCharterSerializer(serializers.ModelSerializer):
         instance.iwo = iwo
         instance.save()
 
-        return instance
-    
-    def get_iwo(self, instance):
-        project_code = "SCC"  # Example project code, you can customize this
-        customer_code = "INFO"  # Example customer code, you can customize this
+        self.log_activity(instance.id_user.pk, 'created', 'Projectcharter', instance)
 
-        # Assuming id_charter is unique and can be used as a sequence number
+        return instance
+
+    def get_iwo(self, instance):
+        # Logika untuk menghasilkan nilai 'iwo'
+        project_code = "SCC"
+        customer_code = "INFO"
         sequence_number = instance.id_charter
         now = instance.createdAt
         year_month = now.strftime("%y%m")
@@ -46,8 +71,57 @@ class ProjectCharterSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data['iwo'] = self.get_iwo(instance)
         return data
-    
-  
+
+    def update(self, instance, validated_data):
+        # Update objek dengan nilai-nilai baru
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+
+        # List kolom yang harus diisi untuk mengatur status_project ke 'done'
+        required_columns = ['project_name', 'project_manager', 'customer', 'end_customer', 'bu_delivery', 'bu_related', 'project_description', 'id_user']
+
+        if all(getattr(instance, col) is not None for col in required_columns):
+            # Jika semua field terisi, atur status_project ke 'done'
+            instance.status_project = 'done'
+        else:
+            # Jika ada setidaknya satu field yang kosong, atur status_project ke 'draft'
+            instance.status_project = 'draft'
+
+        instance.save()
+        self.log_activity(instance.id_user.pk, 'updated', 'Projectcharter', instance)
+
+        return instance
+
+    def log_activity(self, user_id, action, name_table, projectcharter):
+        user_instance = get_object_or_404(User, id_user=user_id)
+
+        object_data = {
+            'project_name': projectcharter.project_name,
+            'project_manager': projectcharter.project_manager,
+            'customer': projectcharter.customer,
+            'end_customer': projectcharter.end_customer,
+            'bu_delivery': projectcharter.bu_delivery,
+            'bu_related': projectcharter.bu_related,
+            'project_description': projectcharter.project_description,
+            # ... (kolom lainnya)
+        }
+
+        ActivityLog.objects.create(
+            id_user=user_instance,
+            action=action,
+            name_table=name_table,
+            object=json.dumps(object_data),
+        )
+
+    def delete(self, request, *args, **kwargs):
+        # Logging activity for deleted responsibility
+        user_id = self.instance.id_user.id_user
+        self.log_activity(user_id, 'deleted', 'projectcharter', self.instance)
+
+        # Call the superclass delete method to perform the deletion
+        return super().delete(request, *args, **kwargs)
+
+
 
 class TotalProjectsSerializer(serializers.Serializer):
     total_projects = serializers.IntegerField()

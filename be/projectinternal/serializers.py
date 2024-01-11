@@ -1,15 +1,22 @@
 from rest_framework import serializers
-from .models import ProjectInternal, User
+from .models import ProjectInternal, User, ActivityLog
+import json
+from django.shortcuts import get_object_or_404
+
+class ActivityLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActivityLog
+        fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['nama']
+        fields = ['id_user', 'nama']
 
 class ProjectInternalSerializer(serializers.ModelSerializer):
-    user = UserSerializer(source='id_user', read_only=True)  # Tambahkan source='id_user' di sini
+    user = UserSerializer(source='id_user', read_only=True)
     total_weeks = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = ProjectInternal
         fields = ['id_user', 'user', 'id_project', 'status', 'requester', 'application_name', 'start_date', 'end_date', 'total_weeks', 'hld', 'lld', 'brd', 'sequence_number']
@@ -25,10 +32,52 @@ class ProjectInternalSerializer(serializers.ModelSerializer):
         start_date = instance.start_date
         end_date = instance.end_date
 
-        # Hitung selisih waktu antara start_date dan end_date
         delta = end_date - start_date
-
-        # Hitung jumlah minggu, dengan asumsi 4 minggu per bulan
         total_weeks = (delta.days // 7) + (delta.days % 30 >= 7)
-
         return total_weeks
+
+    def create(self, validated_data):
+        user_id = validated_data['id_user'].pk
+        project = super().create(validated_data)
+        self.log_activity(user_id, 'created', 'ProjectInternal', project)
+        return project
+
+    def update(self, instance, validated_data):
+        user = validated_data.get('id_user', instance.id_user)
+        project = super().update(instance, validated_data)
+
+        # Cek perubahan dan log activity
+        changed_fields = {}
+        for field, value in validated_data.items():
+            if getattr(instance, field) != value:
+                changed_fields[field] = {
+                    'old': getattr(instance, field),
+                    'new': value
+                }
+
+        self.log_activity(user, 'updated', changed_fields)
+        return project
+
+    def log_activity(self, user, action, changed_fields=None):
+        object_data = {
+            'id_project': self.instance.id_project,
+            'status': self.instance.status,
+            'requester': self.instance.requester,
+            'application_name': self.instance.application_name,
+            'start_date': str(self.instance.start_date),
+            'end_date': str(self.instance.end_date),
+            'hld': str(self.instance.hld),
+            'lld': str(self.instance.lld),
+            'brd': self.instance.brd,
+            'sequence_number': self.instance.sequence_number,
+        }
+
+        if changed_fields:
+            object_data['changed_fields'] = changed_fields
+
+        ActivityLog.objects.create(
+            id_user=user,
+            action=action,
+            name_table='ProjectInternal',
+            object=json.dumps(object_data),
+        )

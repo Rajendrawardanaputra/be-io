@@ -46,3 +46,19 @@ class Milostones(models.Model):
     class Meta:
         managed = False
         db_table = 'milostones'
+
+class ActivityLog(models.Model):
+    id_activity = models.AutoField(primary_key=True)
+    id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user')
+    action = models.CharField(max_length=225, blank=True, null=True)
+    name_table = models.CharField(max_length=225, blank=True, null=True)
+    object = models.TextField(blank=True, null=True)
+    createdAt = models.DateTimeField(auto_now_add=True)  # Field name made lowercase.
+    updatedAt = models.DateTimeField(auto_now=True) # Field name made lowercase.
+    name_column = models.CharField(max_length=255, blank=True, null=True)
+    old_data = models.CharField(max_length=255, blank=True, null=True)
+    changes = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'activity_log'

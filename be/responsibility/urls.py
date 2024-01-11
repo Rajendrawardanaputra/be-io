@@ -1,11 +1,8 @@
-# urls.py
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import ResponsibilityViewSet
-
-router = DefaultRouter()
-router.register(r'bility', ResponsibilityViewSet, basename='responsibility')
+from django.urls import path
+from .views import ResponsibilityListCreateAPIView, ResponsibilityDetailAPIView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('bility/', ResponsibilityListCreateAPIView.as_view(), name='responsibility-list-create'),
+    path('bility/<int:pk>/', ResponsibilityDetailAPIView.as_view(), name='responsibility-detail'),
 ]
+    

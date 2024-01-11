@@ -1,13 +1,15 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import RoleResponsibilities
+from .models import RoleResponsibilities, User, ActivityLog
 from .serializers import RoleResponsibilitiesSerializer
 import boto3
 from datetime import datetime
 from django.conf import settings
 from rest_framework import serializers
 from be.middleware.token_middleware import CustomJWTAuthentication
+from django.shortcuts import get_object_or_404
+import json
 
 class RoleResponsibilitiesListView(ListCreateAPIView):
     authentication_classes = [CustomJWTAuthentication]
@@ -41,12 +43,27 @@ class RoleResponsibilitiesListView(ListCreateAPIView):
             s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
                 Key=photo_struktur_organisasi_name, Body=photo_struktur_organisasi.read(), ContentType='image/jpeg')
 
+            self.log_activity(serializer.validated_data.get('id_user').id_user, 'created', serializer.instance)
+
             return Response({"message": "Foto profil diunggah", "image": photo_struktur_organisasi_url}, status=status.HTTP_201_CREATED)
         else:
             serializer.save(status_responsibilities='draft')
 
             return Response({"message": "Objek Description dibuat tanpa file hlr"}, status=status.HTTP_201_CREATED)
+    
+    def log_activity(self, user_id, action, roleresponbilites):
+         user_instance = get_object_or_404(User, id_user=user_id)
+         object_data = {
+            'struktur_organisasi_url': roleresponbilites.struktur_organisasi.url if roleresponbilites.struktur_organisasi else None,
+        }
 
+         ActivityLog.objects.create(
+            id_user=user_instance,
+            action=action,
+            name_table='roleresponbilities',
+            object=json.dumps(object_data),
+        )
+         
 class RoleResponsibilitiesDetailView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [CustomJWTAuthentication]
     queryset = RoleResponsibilities.objects.all()
@@ -93,4 +110,26 @@ class RoleResponsibilitiesDetailView(RetrieveUpdateDestroyAPIView):
             data["struktur_organisasi"] = old_photo_struktur_organisasi
             data["status_responsibilities"] = "draft"  # Tetapkan status menjadi 'draft'
 
+
         serializer.save(**data)
+
+        self.log_activity(serializer.instance.id_user.pk, 'updated', serializer.instance)
+
+
+
+    def perform_destroy(self, instance):
+        self.log_activity(instance.id_user.pk, 'deleted', instance)
+        instance.delete()
+
+    def log_activity(self, user_id, action, roleresponsibilities):
+        user_instance = get_object_or_404(User, id_user=user_id)
+        object_data = {
+            'struktur_organisasi_url': roleresponsibilities.struktur_organisasi.url if roleresponsibilities.struktur_organisasi else None,
+        }
+
+        ActivityLog.objects.create(
+            id_user=user_instance,
+            action=action,
+            name_table='roleresponbilities',
+            object=json.dumps(object_data),
+        )

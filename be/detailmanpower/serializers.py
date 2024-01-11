@@ -1,8 +1,7 @@
 # serializers.py
 
 from rest_framework import serializers
-from .models import DetailMainPower, User, ProjectInternal
-
+from .models import DetailMainPower, User, ProjectInternal, ActivityLog
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,20 +29,41 @@ class DetailMainPowerSerializer(serializers.ModelSerializer):
         return man_days_rate * man_power * days
 
     def create(self, validated_data):
-        # Menghitung dan mengatur total_man_rate saat pembuatan objek
         total_man_rate = self.calculate_total_man_rate(validated_data)
         validated_data['total_man_rate'] = total_man_rate
-        return super().create(validated_data)
+        detail_main_power = super().create(validated_data)
+
+        # Membuat log aktivitas untuk pembuatan objek
+        ActivityLog.objects.create(
+            id_user=detail_main_power.id_user,
+            action='create',
+            name_table='DetailMainPower',
+            object=str(detail_main_power),
+            name_column='total_man_rate',
+            changes=str(total_man_rate)
+        )
+
+        return detail_main_power
 
     def update(self, instance, validated_data):
-        # Menghitung dan mengatur total_man_rate saat pembaruan objek
         total_man_rate = self.calculate_total_man_rate(validated_data)
         instance.man_days_rate = validated_data.get('man_days_rate', instance.man_days_rate)
         instance.man_power = validated_data.get('man_power', instance.man_power)
         instance.days = validated_data.get('days', instance.days)
         instance.total_man_rate = total_man_rate
-        instance.role = validated_data.get('role', instance.role)  # Memperbarui bidang role
+        instance.role = validated_data.get('role', instance.role)
         instance.save()
+
+        # Membuat log aktivitas untuk pembaruan objek
+        ActivityLog.objects.create(
+            id_user=instance.id_user,
+            action='update',
+            name_table='DetailMainPower',
+            object=str(instance),
+            name_column='total_man_rate',
+            changes=str(total_man_rate)
+        )
+
         return instance
 
 class DetailMainPowerListSerializer(serializers.ListSerializer):

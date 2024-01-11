@@ -1,30 +1,22 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from .models import ProjectInternal
+from .models import ProjectInternal, User, ActivityLog
 from rest_framework import serializers
 from rest_framework import status
 from .serializers import ProjectInternalSerializer
 from rest_framework.response import Response
-from django.http import HttpResponseBadRequest
-from django.core.files.storage import default_storage
-from rest_framework.decorators import api_view
-#from be.middleware.token_middleware import CustomJWTAuthentication
-from jwt import ExpiredSignatureError, InvalidTokenError
-from django.http import JsonResponse
 from datetime import datetime
 import boto3
 from django.conf import settings
 import json
 from urllib.parse import quote
-import botocore
 import os
 from be.middleware.token_middleware import CustomJWTAuthentication
-from jwt import ExpiredSignatureError, InvalidTokenError
-
-
+from django.shortcuts import get_object_or_404
+import json
+from django.conf import settings
 
 class ProjectInternalListCreateView(ListCreateAPIView):
     authentication_classes = [CustomJWTAuthentication]
-
     queryset = ProjectInternal.objects.all()
     serializer_class = ProjectInternalSerializer
 
@@ -38,6 +30,9 @@ class ProjectInternalListCreateView(ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+
+        # Insert activity log for 'created' action
+        self.log_activity(serializer.validated_data['id_user'].pk, 'created', serializer.instance)
 
         queryset = self.get_queryset()
         response_data = self.get_response_data(queryset, serializer.data)
@@ -60,44 +55,62 @@ class ProjectInternalListCreateView(ListCreateAPIView):
         }
     
     def perform_create(self, serializer):
-     validated_data = serializer.validated_data
-     photo_hld = validated_data['hld']
-     photo_lld = validated_data['lld']
+        validated_data = serializer.validated_data
+        photo_hld = validated_data['hld']
+        photo_lld = validated_data['lld']
 
-     current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
+        current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
 
-     s3 = boto3.resource('s3', endpoint_url=settings.AWS_S3_ENDPOINT_URL,
-                        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+        s3 = boto3.resource('s3', endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
     
-    # Proses untuk foto hld
-     photo_hld_name = f"hld/{current_datetime}_{photo_hld.name}"
-     photo_hld_url = f"/internalorder/{photo_hld_name}"
+        # Proses untuk foto hld
+        photo_hld_name = f"hld/{current_datetime}_{photo_hld.name}"
+        photo_hld_url = f"/internalorder/{photo_hld_name}"
 
-    # Proses untuk foto lld
-     photo_lld_name = f"lld/{current_datetime}_{photo_lld.name}"
-     photo_lld_url = f"/internalorder/{photo_lld_name}"
+        # Proses untuk foto lld
+        photo_lld_name = f"lld/{current_datetime}_{photo_lld.name}"
+        photo_lld_url = f"/internalorder/{photo_lld_name}"
 
-     serializer.save(hld=photo_hld_url, lld=photo_lld_url)
+        serializer.save(hld=photo_hld_url, lld=photo_lld_url)
 
-    # Simpan foto hld
-     s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
-        Key=photo_hld_name, Body=photo_hld, ContentType='image/jpeg')     
+        # Simpan foto hld
+        s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
+            Key=photo_hld_name, Body=photo_hld, ContentType='image/jpeg')     
 
-    # Simpan foto lld
-     s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
-        Key=photo_lld_name, Body=photo_lld, ContentType='image/jpeg')     
+        # Simpan foto lld
+        s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
+            Key=photo_lld_name, Body=photo_lld, ContentType='image/jpeg')
 
-     return Response({"message": "Foto HLD dan LLD diunggah", "hld": photo_hld_url, "lld": photo_lld_url}, status=status.HTTP_201_CREATED)
+    def log_activity(self, user_id, action, project):
+        user_instance = get_object_or_404(User, id_user=user_id)
+        object_data = {
+            'id_project': project.id_project,
+            'status': project.status,
+            'requester': project.requester,
+            'application_name': project.application_name,
+            'start_date': project.start_date.strftime('%Y-%m-%d') if project.start_date else None,
+            'end_date': project.end_date.strftime('%Y-%m-%d') if project.end_date else None,
+            'hld': str(project.hld),
+            'lld': str(project.lld),
+            'brd': project.brd,
+            'sequence_number': project.sequence_number,
+        }
 
-
+        ActivityLog.objects.create(
+            id_user=user_instance,
+            action=action,
+            name_table='ProjectInternal',
+            object=json.dumps(object_data),
+        )
 
 class ProjectInternalRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    authentication_classes = [CustomJWTAuthentication]
     queryset = ProjectInternal.objects.all()
     serializer_class = ProjectInternalSerializer
 
     def perform_update(self, serializer):
-        # Hapus foto profil lama dari S3 saat pembaruan
         old_photo_hld = serializer.instance.hld
         new_photo_hld = self.request.data.get('hld')
 
@@ -136,10 +149,9 @@ class ProjectInternalRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
                 old_photo_profile_name = old_photo_hld.name.split('/')[-1]
                 s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).delete_objects(Delete={'Objects': [{'Key': f'hld/{old_photo_profile_name}'}]})
             
-            data["hld"] = photo_hld  # Tambahkan data hld ke dictionary
+            data["hld"] = photo_hld
+            self.log_activity(serializer.instance.id_user.pk, 'updated', 'hld', old_photo_hld, new_photo_hld)
         elif new_photo_hld is None:
-            # Jika tidak ada file hld yang disertakan dalam pembaruan,
-            # pertahankan nilai yang ada pada objek sebelumnya
             data["hld"] = old_photo_hld
 
         if new_photo_lld is not None and hasattr(new_photo_lld, 'size'):
@@ -168,14 +180,44 @@ class ProjectInternalRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
                 old_photo_profile_name = old_photo_lld.name.split('/')[-1]
                 s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).delete_objects(Delete={'Objects': [{'Key': f'lld/{old_photo_profile_name}'}]})
             
-            data["lld"] = photo_lld  # Tambahkan data lld ke dictionary
+            data["lld"] = photo_lld
+            self.log_activity(serializer.instance.id_user.pk, 'updated', 'lld', old_photo_lld, new_photo_lld)
         elif new_photo_lld is None:
-            # Jika tidak ada file lld yang disertakan dalam pembaruan,
-            # pertahankan nilai yang ada pada objek sebelumnya
             data["lld"] = old_photo_lld
 
         serializer.save(**data)
         return Response({"message": "Update berhasil"}, status=status.HTTP_200_OK)
+    
+    def perform_destroy(self, instance):
+        user_id = instance.id_user.pk  # Sesuaikan dengan field yang sesuai di model User
+        self.log_activity(user_id, 'deleted', 'ProjectInternal', instance)
+        instance.delete()
+        return Response({"message": "ProjectInternal berhasil dihapus"}, status=status.HTTP_204_NO_CONTENT)
+
+    def log_activity(self, user_id, action, name_table, project):
+    # Gunakan get_object_or_404 untuk mendapatkan instance User
+     user_instance = get_object_or_404(User, id_user=user_id)
+    
+     object_data = {
+        'id_project': project.id_project,
+        'status': project.status,
+        'requester': project.requester,
+        'application_name': project.application_name,
+        'start_date': project.start_date.strftime('%Y-%m-%d') if project.start_date else None,
+        'end_date': project.end_date.strftime('%Y-%m-%d') if project.end_date else None,
+        'hld': str(project.hld),
+        'lld': str(project.lld),
+        'brd': project.brd,
+        'sequence_number': project.sequence_number,
+    }
+
+     ActivityLog.objects.create(
+        id_user=user_instance,  # Gunakan user_instance sebagai nilai id_user
+        action=action,
+        name_table=name_table,
+        object=json.dumps(object_data),
+    )
+     return Response({"message": f"{name_table} berhasil di{action}"}, status=status.HTTP_204_NO_CONTENT)
 
 
     # def perform_update(self, serializer):
