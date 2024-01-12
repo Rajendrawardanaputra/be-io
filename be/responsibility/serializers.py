@@ -1,4 +1,3 @@
-# serializers.py
 from rest_framework import serializers
 from .models import Responsibility, ProjectCharter, User, ActivityLog
 import json
@@ -24,18 +23,21 @@ class ResponsibilitySerializer(serializers.ModelSerializer):
         read_only_fields = ['status_responsibility']
 
     def validate(self, data):
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+
+        # Validasi start_date dan end_date
+        if start_date and end_date and start_date > end_date:
+            raise serializers.ValidationError("End date must be greater than or equal to start date.")
+
         pm_responsibility = data.get('pm_responsibility', '')
         project_value = data.get('project_value', '')
-        start_date = data.get('start_date', '')
-        end_date = data.get('end_date', '')
         id_charter = data.get('id_charter')
         id_user = data.get('id_user')
 
         if pm_responsibility and project_value and start_date and end_date and id_charter is not None and id_user is not None:
-            # Jika semua field terisi, atur status_responsibility ke 'done'
             data['status_responsibility'] = 'done'
         else:
-            # Jika ada setidaknya satu field yang kosong, atur status_responsibility ke 'draft'
             data['status_responsibility'] = 'draft'
 
         return data
@@ -58,10 +60,8 @@ class ResponsibilitySerializer(serializers.ModelSerializer):
         id_user = instance.id_user_id
 
         if pm_responsibility and project_value and start_date and end_date and id_charter is not None and id_user is not None:
-            # Jika semua field terisi, atur status_responsibility ke 'done'
             instance.status_responsibility = 'done'
         else:
-            # Jika ada setidaknya satu field yang kosong, atur status_responsibility ke 'draft'
             instance.status_responsibility = 'draft'
 
         instance.save()
@@ -74,7 +74,7 @@ class ResponsibilitySerializer(serializers.ModelSerializer):
         object_data = {
             'pm_responsibility': responsibility.pm_responsibility,
             'project_value': responsibility.project_value,
-            'start_date': str(responsibility.start_date),  # Convert date to string
+            'start_date': str(responsibility.start_date),
             'end_date': str(responsibility.end_date), 
             # ... (kolom lainnya)
         }

@@ -36,12 +36,25 @@ class ProjectInternalSerializer(serializers.ModelSerializer):
         total_weeks = (delta.days // 7) + (delta.days % 30 >= 7)
         return total_weeks
 
+    def validate(self, data):
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+
+        # Pastikan end_date tidak kurang dari start_date
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError("Tanggal selesai tidak boleh sebelum tanggal mulai.")
+
+        return data
+
     def create(self, validated_data):
         user_id = validated_data['id_user'].pk
         project = super().create(validated_data)
-        self.log_activity(user_id, 'created', 'ProjectInternal', project)
-        return project
 
+        # Insert activity log for 'created' action
+        self.log_activity(user_id, 'created', project)
+
+        return project
+        
     def update(self, instance, validated_data):
         user = validated_data.get('id_user', instance.id_user)
         project = super().update(instance, validated_data)
@@ -59,25 +72,26 @@ class ProjectInternalSerializer(serializers.ModelSerializer):
         return project
 
     def log_activity(self, user, action, changed_fields=None):
-        object_data = {
-            'id_project': self.instance.id_project,
-            'status': self.instance.status,
-            'requester': self.instance.requester,
-            'application_name': self.instance.application_name,
-            'start_date': str(self.instance.start_date),
-            'end_date': str(self.instance.end_date),
-            'hld': str(self.instance.hld),
-            'lld': str(self.instance.lld),
-            'brd': self.instance.brd,
-            'sequence_number': self.instance.sequence_number,
-        }
+        if self.instance:
+            object_data = {
+                'id_project': self.instance.id_project,
+                'status': self.instance.status,
+                'requester': self.instance.requester,
+                'application_name': self.instance.application_name,
+                'start_date': str(self.instance.start_date),
+                'end_date': str(self.instance.end_date),
+                'hld': str(self.instance.hld),
+                'lld': str(self.instance.lld),
+                'brd': self.instance.brd,
+                'sequence_number': self.instance.sequence_number,
+            }
 
-        if changed_fields:
-            object_data['changed_fields'] = changed_fields
+            if changed_fields:
+                object_data['changed_fields'] = changed_fields
 
-        ActivityLog.objects.create(
-            id_user=user,
-            action=action,
-            name_table='ProjectInternal',
-            object=json.dumps(object_data),
-        )
+            ActivityLog.objects.create(
+                id_user=user,
+                action=action,
+                name_table='ProjectInternal',
+                object=json.dumps(object_data),
+            )

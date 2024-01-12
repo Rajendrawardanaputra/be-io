@@ -1,19 +1,17 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from .models import ProjectInternal, User, ActivityLog
-from rest_framework import serializers
-from rest_framework import status
-from .serializers import ProjectInternalSerializer
 from rest_framework.response import Response
+from rest_framework import status
+from .models import ProjectInternal, User, ActivityLog
+from .serializers import ProjectInternalSerializer
+from be.middleware.token_middleware import CustomJWTAuthentication
+from django.shortcuts import get_object_or_404
 from datetime import datetime
 import boto3
-from django.conf import settings
 import json
 from urllib.parse import quote
 import os
-from be.middleware.token_middleware import CustomJWTAuthentication
-from django.shortcuts import get_object_or_404
-import json
 from django.conf import settings
+from rest_framework import serializers
 
 class ProjectInternalListCreateView(ListCreateAPIView):
     authentication_classes = [CustomJWTAuthentication]
@@ -85,25 +83,31 @@ class ProjectInternalListCreateView(ListCreateAPIView):
 
     def log_activity(self, user_id, action, project):
         user_instance = get_object_or_404(User, id_user=user_id)
-        object_data = {
-            'id_project': project.id_project,
-            'status': project.status,
-            'requester': project.requester,
-            'application_name': project.application_name,
-            'start_date': project.start_date.strftime('%Y-%m-%d') if project.start_date else None,
-            'end_date': project.end_date.strftime('%Y-%m-%d') if project.end_date else None,
-            'hld': str(project.hld),
-            'lld': str(project.lld),
-            'brd': project.brd,
-            'sequence_number': project.sequence_number,
-        }
+    
+        if project:
+            object_data = {
+                'id_project': project.id_project,
+                'status': project.status,
+                'requester': project.requester,
+                'application_name': project.application_name,
+                'start_date': project.start_date.strftime('%Y-%m-%d') if project.start_date else None,
+                'end_date': project.end_date.strftime('%Y-%m-%d') if project.end_date else None,
+                'hld': str(project.hld),
+                'lld': str(project.lld),
+                'brd': project.brd,
+                'sequence_number': project.sequence_number,
+            }
 
-        ActivityLog.objects.create(
-            id_user=user_instance,
-            action=action,
-            name_table='ProjectInternal',
-            object=json.dumps(object_data),
-        )
+            ActivityLog.objects.create(
+                id_user=user_instance,
+                action=action,
+                name_table='ProjectInternal',
+                object=json.dumps(object_data),
+            )
+            
+            return Response({"message": f"ProjectInternal berhasil di{action}"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({"message": "ProjectInternal tidak ditemukan"}, status=status.HTTP_404_NOT_FOUND)
 
 class ProjectInternalRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [CustomJWTAuthentication]
@@ -189,91 +193,38 @@ class ProjectInternalRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
         return Response({"message": "Update berhasil"}, status=status.HTTP_200_OK)
     
     def perform_destroy(self, instance):
-        user_id = instance.id_user.pk  # Sesuaikan dengan field yang sesuai di model User
+        user_id = instance.id_user.pk
         self.log_activity(user_id, 'deleted', 'ProjectInternal', instance)
         instance.delete()
         return Response({"message": "ProjectInternal berhasil dihapus"}, status=status.HTTP_204_NO_CONTENT)
 
-    def log_activity(self, user_id, action, name_table, project):
-    # Gunakan get_object_or_404 untuk mendapatkan instance User
-     user_instance = get_object_or_404(User, id_user=user_id)
+    def log_activity(self, user_id, action, name_table, project, old_value=None, new_value=None):
+        user_instance = get_object_or_404(User, id_user=user_id)
     
-     object_data = {
-        'id_project': project.id_project,
-        'status': project.status,
-        'requester': project.requester,
-        'application_name': project.application_name,
-        'start_date': project.start_date.strftime('%Y-%m-%d') if project.start_date else None,
-        'end_date': project.end_date.strftime('%Y-%m-%d') if project.end_date else None,
-        'hld': str(project.hld),
-        'lld': str(project.lld),
-        'brd': project.brd,
-        'sequence_number': project.sequence_number,
-    }
+        object_data = {
+            'id_project': project.id_project,
+            'status': project.status,
+            'requester': project.requester,
+            'application_name': project.application_name,
+            'start_date': project.start_date.strftime('%Y-%m-%d') if project.start_date else None,
+            'end_date': project.end_date.strftime('%Y-%m-%d') if project.end_date else None,
+            'hld': str(project.hld),
+            'lld': str(project.lld),
+            'brd': project.brd,
+            'sequence_number': project.sequence_number,
+        }
 
-     ActivityLog.objects.create(
-        id_user=user_instance,  # Gunakan user_instance sebagai nilai id_user
-        action=action,
-        name_table=name_table,
-        object=json.dumps(object_data),
-    )
-     return Response({"message": f"{name_table} berhasil di{action}"}, status=status.HTTP_204_NO_CONTENT)
+        if old_value is not None and new_value is not None:
+            object_data[name_table] = {
+                'old': str(old_value),
+                'new': str(new_value),
+            }
 
+        ActivityLog.objects.create(
+            id_user=user_instance,
+            action=action,
+            name_table=name_table,
+            object=json.dumps(object_data),
+        )
 
-    # def perform_update(self, serializer):
-    #     validated_data = serializer.validated_data
-    #     photo_hld = validated_data.get('hld', None)
-    #     photo_lld = validated_data.get('lld', None)
-
-    #     # Inisialisasi sumber daya AWS S3 di luar loop
-    #     s3 = boto3.resource('s3', endpoint_url=settings.AWS_S3_ENDPOINT_URL,
-    #                         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-    #                         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-    #     bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
-
-    #     # Update foto hld
-    #     if photo_hld:
-    #         self._handle_old_file(bucket, serializer.instance.hld)
-    #         photo_hld_url = self._process_photo_update(photo_hld, "hld")
-    #         serializer.save(hld=photo_hld_url)
-
-    #     # Update foto lld
-    #     if photo_lld:
-    #         self._handle_old_file(bucket, serializer.instance.lld)
-    #         photo_lld_url = self._process_photo_update(photo_lld, "lld")
-    #         serializer.save(lld=photo_lld_url)
-
-    #     # Lanjutkan dengan pembaruan sisa atribut lainnya jika ada
-    #     super().perform_update(serializer)
-
-    #     # Tanggapan JSON yang konsisten
-    #     response_data = {
-    #         "message": "Foto HLD dan LLD diupdate",
-    #         "hld": photo_hld_url if photo_hld else None,
-    #         "lld": photo_lld_url if photo_lld else None
-    #     }
-    #     return Response(response_data, status=status.HTTP_200_OK)
-
-    # def _handle_old_file(self, bucket, old_url):
-    #     if old_url:
-    #         old_key = os.path.basename(str(old_url))
-    #         try:
-    #             obj = bucket.Object(old_key)
-    #             obj.load()
-    #             bucket.delete_objects(Delete={'Objects': [{'Key': old_key}]})
-    #         except botocore.exceptions.ClientError as e:
-    #             if e.response['Error']['Code'] == '404':
-    #                 pass  # Objek tidak ditemukan, tidak perlu dihapus
-    #             else:
-    #                 raise  # Kesalahan lain
-
-    # def _process_photo_update(self, photo, folder):
-    #     current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
-    #     photo_name = f"{folder}/{current_datetime}_{os.path.basename(photo.name)}"
-    #     photo_url = f"/internalorder/{quote(photo_name)}"
-        
-    #     s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
-    #         Key=photo_name, Body=photo.read(), ContentType='image/jpeg')
-        
-    #     return photo_url
-            
+# Seluruh bagian komentar yang tidak digunakan telah saya hapus agar kode menjadi lebih bersih.
