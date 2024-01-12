@@ -67,7 +67,7 @@ class DeliverableDetailAPIView(RetrieveUpdateDestroyAPIView):
         instance_serializer = self.get_serializer(instance)
         instance_serializer.delete(instance)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Objek berhasil dihapus"}, status=status.HTTP_204_NO_CONTENT)
 
     def log_activity(self, user_id, action, name_table, deliverables):
         user_instance = get_object_or_404(User, id_user=user_id)

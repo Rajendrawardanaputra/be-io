@@ -139,6 +139,8 @@ class DescriptionDetailView(RetrieveUpdateDestroyAPIView):
 
         instance.delete()
 
+        return Response({"message": "Objek berhasil dihapus"}, status=status.HTTP_204_NO_CONTENT)
+
     def log_activity(self, user_id, action, name_table, description):
         user_instance = get_object_or_404(User, id_user=user_id)
 

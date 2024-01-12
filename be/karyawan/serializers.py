@@ -4,7 +4,7 @@ from .models import ActivityLog, User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['hak_akses']
+        fields = ['hak_akses', 'nama']
 class ActivityLogSerializer(serializers.ModelSerializer):
     user = UserSerializer(source='id_user', read_only=True)
     class Meta:
