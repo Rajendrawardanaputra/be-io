@@ -25,7 +25,7 @@ SECRET_KEY = 'projectinternalorder'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.8000']
+ALLOWED_HOSTS = ['localhost', '127.0.0.8000', '192.168.56.105:7005']
 
 
 
@@ -101,7 +101,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'db',
         'USER': 'postgres',
-        'PASSWORD': '1234',
+        'PASSWORD': '0000',
         'PORT': '5432',
         'HOST': 'localhost',
         'OPTIONS': {
@@ -158,9 +158,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # AWS_QUERYSTRING_AUTH = False
 # AWS_S3_SECURE_URLS = False
 # AWS_S3_CUSTOM_DOMAIN=None
-AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9000'
-AWS_ACCESS_KEY_ID = 'CF2yrK2BJGimkr2JJ5FO'
-AWS_SECRET_ACCESS_KEY = 'iOCgyIGcbzHfjihl4iSdoi63x1Hao2UitXVgWIHI'
+AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9006'
+AWS_ACCESS_KEY_ID = 'O8BdMBfL7YfPEev6yylB'
+AWS_SECRET_ACCESS_KEY = 'N2n9Bv6acTxu8Na6LFE1IXRJRSaMG0yq4rpw9Dv6'
 AWS_STORAGE_BUCKET_NAME = 'internalorder'
 
 # Internationalization
@@ -233,7 +233,7 @@ AUTHENTICATION_BACKENDS = [
 CORS_ORIGIN_ALLOW_ALL = False
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000"
+    "http://localhost:3000", '192.168.56.105:7004'
 ]
 
 CORS_ALLOW_METHODS = [
