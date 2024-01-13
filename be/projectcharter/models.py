@@ -25,7 +25,7 @@ class ProjectCharter(models.Model):
     bu_delivery = models.CharField(blank=True, null=True)
     bu_related = models.CharField(blank=True, null=True)
     id_charter = models.AutoField(primary_key=True)
-    project_description = models.TextField(max_length=255, blank=True, null=True)
+    project_description = models.TextField(blank=True, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user', blank=True, null=True)
     updateAt = models.DateTimeField(auto_now=True)
@@ -34,23 +34,6 @@ class ProjectCharter(models.Model):
     class Meta:
         managed = False
         db_table = 'project_charter'
-
-class ActivityLog(models.Model):
-    id_activity = models.AutoField(primary_key=True)
-    id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user')
-    action = models.CharField(max_length=225, blank=True, null=True)
-    name_table = models.CharField(max_length=225, blank=True, null=True)
-    object = models.TextField(blank=True, null=True)
-    createdAt = models.DateTimeField(auto_now_add=True)  # Field name made lowercase.
-    updatedAt = models.DateTimeField(auto_now=True) # Field name made lowercase.
-    name_column = models.CharField(max_length=255, blank=True, null=True)
-    old_data = models.CharField(max_length=255, blank=True, null=True)
-    changes = models.CharField(max_length=255, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'activity_log'
-
 
 class ActivityLog(models.Model):
     id_activity = models.AutoField(primary_key=True)

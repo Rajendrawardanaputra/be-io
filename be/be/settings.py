@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'projectcharter',
     'description',
     'deliverable',
-    'detailmilostones',
+    #'detailmilostones',
     'milostones',
     'detail_responsibilities',
     'responsibility',

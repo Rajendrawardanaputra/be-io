@@ -23,7 +23,7 @@ class ProjectCharter(models.Model):
     bu_delivery = models.CharField(blank=True, null=True)
     bu_related = models.CharField(blank=True, null=True)
     id_charter = models.AutoField(primary_key=True)
-    project_description = models.CharField(max_length=255, blank=True, null=True)
+    project_description = models.TextField(blank=True, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)  # Field name made lowercase.
     status_project = models.CharField(max_length=255, blank=True, null=True)
     id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user', blank=True, null=True)

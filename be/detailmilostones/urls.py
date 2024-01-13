@@ -1,11 +1,8 @@
 # urls.py
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import DetailMilostonesViewSet
-
-router = DefaultRouter()
-router.register(r'detailmilostones', DetailMilostonesViewSet, basename='detail_milostones')
+from django.urls import path
+from .views import OverallStatusView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    # ... path lainnya ...
+    path('overallstatus/', OverallStatusView.as_view(), name='overall_status'),
 ]
