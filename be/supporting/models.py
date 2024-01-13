@@ -35,7 +35,7 @@ class ProjectCharter(models.Model):
 
 class SupportingDoc(models.Model):
     document_name = models.CharField(max_length=255, blank=True, null=True)
-    notes = models.CharField(max_length=255, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
     document = models.FileField(max_length=255, blank=True, null=True)
     id_supporting = models.AutoField(primary_key=True)
     id_charter = models.ForeignKey('ProjectCharter', models.DO_NOTHING, db_column='id_charter', blank=True, null=True)

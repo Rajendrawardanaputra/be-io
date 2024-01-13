@@ -36,7 +36,7 @@ class ProjectCharter(models.Model):
 
 class Deliverable(models.Model):
     id_deliverable = models.AutoField(primary_key=True)
-    deliverables = models.CharField(max_length=255, blank=True, null=True)
+    deliverables = models.TextField(blank=True, null=True)
     id_charter = models.ForeignKey('ProjectCharter', models.DO_NOTHING, db_column='id_charter', blank=True, null=True)
     id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user', blank=True, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)  # Field name made lowercase.

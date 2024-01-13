@@ -38,7 +38,7 @@ class Approvedby(models.Model):
     cc_to = models.CharField(max_length=255, blank=True, null=True)
     tanggal = models.DateField(blank=True, null=True)
     id_approv = models.AutoField(primary_key=True)
-    note = models.CharField(max_length=255, blank=True, null=True)
+    note = models.TextField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     id_charter = models.ForeignKey('ProjectCharter', models.DO_NOTHING, db_column='id_charter', blank=True, null=True)
     id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user', blank=True, null=True)

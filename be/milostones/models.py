@@ -33,8 +33,8 @@ class ProjectCharter(models.Model):
         db_table = 'project_charter'
 
 class Milostones(models.Model):
-    milestone = models.CharField(max_length=50, blank=True, null=True)
-    deskripsi = models.CharField(max_length=50, blank=True, null=True)
+    milestone = models.TextField(blank=True, null=True)
+    deskripsi = models.TextField(blank=True, null=True)
     id_milostone = models.AutoField(primary_key=True)
     tanggal = models.CharField(max_length=255, blank=True, null=True)
     id_charter = models.ForeignKey('ProjectCharter', models.DO_NOTHING, db_column='id_charter', blank=True, null=True)

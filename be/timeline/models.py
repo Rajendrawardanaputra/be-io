@@ -18,7 +18,7 @@ class User(models.Model):
 class DetailTimeline(models.Model):
     id_detail_timeline = models.AutoField(primary_key=True)
     weeks = models.IntegerField(blank=True, null=True)
-    activity = models.CharField(max_length=255, blank=True, null=True)
+    activity = models.TextField(blank=True, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)  # Field name made lowercase.
     updateAt = models.DateTimeField(auto_now=True)  # Field name made lowercase.
     id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user', blank=True, null=True)

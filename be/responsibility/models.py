@@ -33,7 +33,7 @@ class ProjectCharter(models.Model):
         db_table = 'project_charter'
 
 class Responsibility(models.Model):
-    pm_responsibility = models.CharField(max_length=255, blank=True, null=True)
+    pm_responsibility = models.TextField(blank=True, null=True)
     project_value = models.CharField(max_length=255, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
