@@ -1,8 +1,7 @@
-# urls.py
-from django.urls import path
-from .views import OverallStatusView
+# from django.urls import path
+# from .views import StatusListCreateView
 
-urlpatterns = [
-    # ... path lainnya ...
-    path('overallstatus/', OverallStatusView.as_view(), name='overall_status'),
-]
+# urlpatterns = [
+#     path('status/', StatusListCreateView.as_view(), name='status-list-create'),
+#     # ... mungkin ada path lainnya ...
+# ]

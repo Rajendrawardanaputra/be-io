@@ -25,7 +25,7 @@ SECRET_KEY = 'projectinternalorder'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.8000']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '127.0.0.1:8000']
 
 
 
@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'projectcharter',
     'description',
     'deliverable',
-    #'detailmilostones',
+    # 'detailmilostones',
     'milostones',
     'detail_responsibilities',
     'responsibility',

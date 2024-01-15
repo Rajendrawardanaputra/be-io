@@ -36,12 +36,13 @@ class Milostones(models.Model):
     milestone = models.TextField(blank=True, null=True)
     deskripsi = models.TextField(blank=True, null=True)
     id_milostone = models.AutoField(primary_key=True)
-    tanggal = models.CharField(max_length=255, blank=True, null=True)
+    tanggal = models.DateField(blank=True, null=True)
     id_charter = models.ForeignKey('ProjectCharter', models.DO_NOTHING, db_column='id_charter', blank=True, null=True)
     id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user', blank=True, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)  # Field name made lowercase.
     updatedAt = models.DateTimeField(auto_now=True) 
     status_milostones = models.TextField(blank=True, null=True)
+    tanggal_selesai = models.DateField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -58,6 +59,7 @@ class ActivityLog(models.Model):
     name_column = models.CharField(max_length=255, blank=True, null=True)
     old_data = models.CharField(max_length=255, blank=True, null=True)
     changes = models.CharField(max_length=255, blank=True, null=True)
+    
 
     class Meta:
         managed = False

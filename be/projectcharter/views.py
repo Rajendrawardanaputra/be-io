@@ -15,8 +15,8 @@ class TotalProjectsAPIView(ListAPIView):
 
     def get(self, request, *args, **kwargs):
         total_projects = ProjectCharter.objects.count()
-        total_draft_projects = ProjectCharter.objects.filter(status_project='draft').count()
-        total_done_projects = ProjectCharter.objects.filter(status_project='done').count()
+        total_draft_projects = ProjectCharter.objects.filter(status_project='Draft').count()
+        total_done_projects = ProjectCharter.objects.filter(status_project='Done').count()
 
         data = {
             'total_projects': total_projects,
@@ -34,6 +34,15 @@ class ProjectCharterListCreateAPIView(ListCreateAPIView):
 
     queryset = ProjectCharter.objects.all()
     serializer_class = ProjectCharterSerializer
+
+    def get_queryset(self):
+        queryset = ProjectCharter.objects.all()
+        id_user = self.request.query_params.get('id_user', None)
+        
+        if id_user:
+            queryset = queryset.filter(id_user=id_user)
+        
+        return queryset
 
     def create(self, request, *args, **kwargs):
         # Create the serializer with request data
@@ -55,9 +64,9 @@ class ProjectCharterListCreateAPIView(ListCreateAPIView):
 
         # Check if at least one column is empty
         if any(value == "" for value in validated_data.values()):
-            validated_data['status_project'] = 'draft'
+            validated_data['status_project'] = 'Draft'
         else:
-            validated_data['status_project'] = 'done'
+            validated_data['status_project'] = 'Done'
 
         # Generate IWO dynamically
         project_code = "SCC"  # Example project code, you can customize this
@@ -106,6 +115,15 @@ class ProjectCharterDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = ProjectCharter.objects.all()
     serializer_class = ProjectCharterSerializer
 
+    def get_queryset(self):
+        queryset = ProjectCharter.objects.all()
+        id_user = self.request.query_params.get('id_user', None)
+        
+        if id_user:
+            queryset = queryset.filter(id_user=id_user)
+        
+        return queryset
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
@@ -120,10 +138,10 @@ class ProjectCharterDetailAPIView(RetrieveUpdateDestroyAPIView):
 
         if all(getattr(instance, col) != "" for col in required_columns):
             # Jika semua field terisi, atur status_project ke 'done'
-            instance.status_project = 'done'
+            instance.status_project = 'Done'
         else:
             # Jika ada setidaknya satu field yang kosong, atur status_project ke 'draft'
-            instance.status_project = 'draft'
+            instance.status_project = 'Draft'
 
         instance.save()
 

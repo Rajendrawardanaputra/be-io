@@ -68,6 +68,12 @@ class DetailMainPowerListCreateView(generics.ListCreateAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        
+        # Tambahkan kemampuan pencarian berdasarkan id_project
+        id_project = self.request.query_params.get('id_project')
+        if id_project:
+            queryset = queryset.filter(id_project=id_project)
+
         serializer = self.get_serializer(queryset, many=True)
         response_data = {
             'message': 'Data berhasil diambil',

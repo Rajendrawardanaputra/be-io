@@ -13,6 +13,14 @@ class ApprovedbyListCreateAPIView(ListCreateAPIView):
     queryset = Approvedby.objects.all()
     serializer_class = ApprovedbySerializer
 
+    def get_queryset(self):
+        # Menambahkan filter berdasarkan id_charter jika ada
+        id_charter = self.request.query_params.get('id_charter')
+        queryset = Approvedby.objects.all()
+        if id_charter:
+            queryset = queryset.filter(id_charter=id_charter)
+        return queryset
+
     def perform_create(self, serializer):
         approvedby = serializer.save()
 

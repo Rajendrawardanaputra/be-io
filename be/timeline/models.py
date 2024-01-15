@@ -36,8 +36,8 @@ class ProjectStatus(models.TextChoices):
 class ProjectInternal(models.Model):
     id_project = models.AutoField(primary_key=True)
     status = models.CharField(max_length=20, choices=ProjectStatus.choices, default=ProjectStatus.ON_GOING)
-    requester = models.CharField(max_length=100, blank=True, null=True)
-    application_name = models.CharField(max_length=100, blank=True, null=True)
+    requester = models.TextField(blank=True, null=True)
+    application_name = models.TextField(max_length=100, blank=True, null=True)
     start_date = models.DateField()
     end_date = models.DateField()
     hld = models.FileField(upload_to='hld/', max_length=255, blank=True, null=True)

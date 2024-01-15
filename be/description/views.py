@@ -17,61 +17,68 @@ class DescriptionListView(ListCreateAPIView):
     queryset = Description.objects.all()
     serializer_class = DescriptionSerializer
 
+    def get_queryset(self):
+        queryset = Description.objects.all()
+        id_charter = self.request.query_params.get('id_charter', None)
+        if id_charter:
+            queryset = queryset.filter(id_charter=id_charter)
+        return queryset
+
     def perform_create(self, serializer):
-     validated_data = serializer.validated_data
-     file_upload = validated_data.get('hlr')
+        validated_data = serializer.validated_data
+        file_upload = validated_data.get('hlr')
 
-     if file_upload:
-        current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
+        if file_upload:
+            current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
 
-        s3 = boto3.resource('s3', endpoint_url=settings.AWS_S3_ENDPOINT_URL,
-                            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+            s3 = boto3.resource('s3', endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
 
-        file_name = f"hlr/{current_datetime}_{file_upload.name}"
-        file_url = f"/internalorder/{file_name}"
+            file_name = f"hlr/{current_datetime}_{file_upload.name}"
+            file_url = f"/internalorder/{file_name}"
 
-        # Cek apakah ada kolom lain yang kosong atau None, kecuali status_description dan hlr
-        if any(value in [None, ""] for key, value in validated_data.items() if key not in ['status_description', 'hlr']):
-            serializer.validated_data['status_description'] = 'draft'
+            # Cek apakah ada kolom lain yang kosong atau None, kecuali status_description dan hlr
+            if any(value in [None, ""] for key, value in validated_data.items() if key not in ['status_description', 'hlr']):
+                serializer.validated_data['status_description'] = 'draft'
+            else:
+                serializer.validated_data['status_description'] = 'done'
+
+            serializer.save(hlr=file_url)
+
+            # Simpan file ke S3
+            s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
+                Key=file_name, Body=file_upload, ContentType=file_upload.content_type)
+
+            return Response({"message": "File diunggah", "file_url": file_url}, status=status.HTTP_201_CREATED)
         else:
-            serializer.validated_data['status_description'] = 'done'
+            # Jika tidak ada file yang diunggah, periksa kolom lainnya
+            if any(value in [None, ""] for key, value in validated_data.items() if key != 'status_description'):
+                serializer.validated_data['status_description'] = 'draft'
+            else:
+                serializer.validated_data['status_description'] = 'done'
 
-        serializer.save(hlr=file_url)  
+            serializer.save()
 
-        # Simpan file ke S3
-        s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
-            Key=file_name, Body=file_upload, ContentType=file_upload.content_type)
-
-        return Response({"message": "File diunggah", "file_url": file_url}, status=status.HTTP_201_CREATED)
-     else:
-        # Jika tidak ada file yang diunggah, periksa kolom lainnya
-        if any(value in [None, ""] for key, value in validated_data.items() if key != 'status_description'):
-            serializer.validated_data['status_description'] = 'draft'
-        else:
-            serializer.validated_data['status_description'] = 'done'
-
-        serializer.save()
-
-        return Response({"message": "Objek dibuat tanpa file"}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Objek dibuat tanpa file"}, status=status.HTTP_201_CREATED)
 
     def log_activity(self, user_id, action, name_table, description):
-         user_instance = get_object_or_404(User, id_user=user_id)
-         object_data = {
-            'hlr': description.hlr.url if description.hlr else None, # Convert date to string 
+        user_instance = get_object_or_404(User, id_user=user_id)
+        object_data = {
+            'hlr': description.hlr.url if description.hlr else None,  # Convert date to string
             'assumptions': description.assumptions,
             'contraints': description.contraints,
             'risk': description.risk,
             'key_stakeholders': description.key_stakeholders,
         }
 
-         ActivityLog.objects.create(
+        ActivityLog.objects.create(
             id_user=user_instance,
             action=action,
             name_table=name_table,
             object=json.dumps(object_data),
         )
-        
+
 class DescriptionDetailView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [CustomJWTAuthentication]
     queryset = Description.objects.all()
@@ -99,7 +106,8 @@ class DescriptionDetailView(RetrieveUpdateDestroyAPIView):
             if old_file_hlr:
                 # Dapatkan nama file dari atribut name
                 old_file_name = old_file_hlr.name.split('/')[-1]
-                s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).delete_objects(Delete={'Objects': [{'Key': f'hlr/{old_file_name}'}]})
+                s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).delete_objects(
+                    Delete={'Objects': [{'Key': f'hlr/{old_file_name}'}]})
 
             data["hlr"] = file_hlr  # Tambahkan data hlr ke dictionary
         elif new_file_hlr is None and old_file_hlr:
@@ -127,13 +135,14 @@ class DescriptionDetailView(RetrieveUpdateDestroyAPIView):
         s3 = boto3.resource('s3', endpoint_url=settings.AWS_S3_ENDPOINT_URL,
                             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-        
+
         old_file_hlr = instance.hlr
 
         if old_file_hlr:
             # Dapatkan nama file dari atribut name
             old_file_name = old_file_hlr.name.split('/')[-1]
-            s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).delete_objects(Delete={'Objects': [{'Key': f'hlr/{old_file_name}'}]})
+            s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).delete_objects(
+                Delete={'Objects': [{'Key': f'hlr/{old_file_name}'}]})
 
         self.log_activity(instance.id_user.pk, 'deleted', 'Description', instance)
 

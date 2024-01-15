@@ -1,4 +1,3 @@
-# views.py
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,6 +10,13 @@ class ResponsibilityListCreateAPIView(ListCreateAPIView):
     authentication_classes = [CustomJWTAuthentication]
     queryset = Responsibility.objects.all()
     serializer_class = ResponsibilitySerializer
+
+    def get_queryset(self):
+        id_charter = self.request.query_params.get('id_charter', None)
+        queryset = super().get_queryset()
+        if id_charter:
+            queryset = queryset.filter(id_charter=id_charter)
+        return queryset
 
     def perform_create(self, serializer):
         responsibility = serializer.save()

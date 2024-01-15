@@ -48,6 +48,13 @@ class DeliverableDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Deliverable.objects.all()
     serializer_class = DeliverableSerializer
 
+    def get_queryset(self):
+        queryset = Deliverable.objects.all()
+        id_charter = self.request.query_params.get('id_charter', None)
+        if id_charter is not None:
+            queryset = queryset.filter(id_charter=id_charter)
+        return queryset
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)

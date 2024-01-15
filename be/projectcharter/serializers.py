@@ -33,10 +33,10 @@ class ProjectCharterSerializer(serializers.ModelSerializer):
 
         if any(field == '' for field in required_fields) or id_user is None:
             # Jika setidaknya satu field kosong atau id_user kosong, atur status_project ke 'draft'
-            data['status_project'] = 'draft'
+            data['status_project'] = 'Draft'
         else:
             # Jika semua field terisi, atur status_project ke 'done'
-            data['status_project'] = 'done'
+            data['status_project'] = 'Done'
 
         return data
 
@@ -82,10 +82,10 @@ class ProjectCharterSerializer(serializers.ModelSerializer):
 
         if all(getattr(instance, col) is not None for col in required_columns):
             # Jika semua field terisi, atur status_project ke 'done'
-            instance.status_project = 'done'
+            instance.status_project = 'Done'
         else:
             # Jika ada setidaknya satu field yang kosong, atur status_project ke 'draft'
-            instance.status_project = 'draft'
+            instance.status_project = 'Draft'
 
         instance.save()
         self.log_activity(instance.id_user.pk, 'updated', 'Projectcharter', instance)

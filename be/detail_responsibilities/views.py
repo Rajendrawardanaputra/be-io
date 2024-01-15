@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from .models import DetailResponsibilities, User, ActivityLog
 from .serializers import DetailResponsibilitiesSerializer, DetailResponsibilitiesListSerializer
@@ -18,23 +17,31 @@ class DetailResponsibilitiesListCreateAPIView(ListCreateAPIView):
             return DetailResponsibilitiesListSerializer
         return DetailResponsibilitiesSerializer
 
-    def perform_create(self, serializer):
-        detailresponbilities_list = serializer.save()
+    def get_queryset(self):
+        id_charter = self.request.query_params.get('id_charter', None)
+        queryset = DetailResponsibilities.objects.all()
 
-        for detailresponbilities in detailresponbilities_list:
-            # Logging activity for each milostones
-            user_id = detailresponbilities.id_user.id_user
-            self.log_activity(user_id, 'created', 'Detailresponbilities', detailresponbilities)
+        if id_charter:
+            queryset = queryset.filter(id_charter=id_charter)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        detailresponsibilities_list = serializer.save()
+
+        for detailresponsibilities in detailresponsibilities_list:
+            user_id = detailresponsibilities.id_user.id_user
+            self.log_activity(user_id, 'created', 'DetailResponsibilities', detailresponsibilities)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def log_activity(self, user_id, action, name_table, detailresponbilities, new_photo=None, old_photo=None):
+    def log_activity(self, user_id, action, name_table, detailresponsibilities):
         user_instance = get_object_or_404(User, id_user=user_id)
 
         object_data = {
-            'nama_pc': detailresponbilities.nama_pc,
-            'role_pc': detailresponbilities.role_pc,
-            'description': detailresponbilities.description,
+            'nama_pc': detailresponsibilities.nama_pc,
+            'role_pc': detailresponsibilities.role_pc,
+            'description': detailresponsibilities.description,
             # ... (kolom lainnya)
         }
 
@@ -54,31 +61,29 @@ class DetailResponsibilitiesDetailAPIView(RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        updated_detailresponbilities = serializer.save()
+        updated_detailresponsibilities = serializer.save()
 
-        # Logging activity for updated milostones
-        user_id = updated_detailresponbilities.id_user.id_user
-        self.log_activity(user_id, 'updated', 'Detailresponbilities', updated_detailresponbilities)
+        user_id = updated_detailresponsibilities.id_user.id_user
+        self.log_activity(user_id, 'updated', 'DetailResponsibilities', updated_detailresponsibilities)
 
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        # Logging activity for deleted milostones
         user_id = instance.id_user.id_user
-        self.log_activity(user_id, 'deleted', 'Detailresponbilities', instance)
+        self.log_activity(user_id, 'deleted', 'DetailResponsibilities', instance)
 
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def log_activity(self, user_id, action, name_table, detailresponbilities, new_photo=None, old_photo=None):
+    def log_activity(self, user_id, action, name_table, detailresponsibilities):
         user_instance = get_object_or_404(User, id_user=user_id)
 
         object_data = {
-            'nama_pc': detailresponbilities.nama_pc,
-            'role_pc': detailresponbilities.role_pc,
-            'description': detailresponbilities.description,
+            'nama_pc': detailresponsibilities.nama_pc,
+            'role_pc': detailresponsibilities.role_pc,
+            'description': detailresponsibilities.description,
             # ... (kolom lainnya)
         }
 

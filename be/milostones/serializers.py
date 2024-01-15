@@ -27,8 +27,13 @@ class MilostonesSerializer(serializers.ModelSerializer):
         milestone = data.get('milestone', '')
         deskripsi = data.get('deskripsi', '')
         tanggal = data.get('tanggal', '')
+        tanggal_selesai = data.get('tanggal_selesai', '')
         id_charter = data.get('id_charter')
         id_user = data.get('id_user')
+
+        # Validasi tanggal_selesai tidak boleh kurang dari tanggal
+        if tanggal and tanggal_selesai and tanggal_selesai < tanggal:
+            raise serializers.ValidationError("End date cannot be earlier than start date.")
 
         if milestone and deskripsi and tanggal and id_charter is not None and id_user is not None:
             # Jika semua field terisi, atur status_milostones ke 'done'
@@ -70,9 +75,10 @@ class MilostonesSerializer(serializers.ModelSerializer):
         user_instance = get_object_or_404(User, id_user=user_id)
 
         object_data = {
-            'tanggal': milostones.tanggal,
+            'tanggal': milostones.tanggal.strftime('%Y-%m-%d') if milostones.tanggal else None,
             'milestone': milostones.milestone,
             'deskripsi': milostones.deskripsi,
+            'tanggal_selesai': milostones.tanggal_selesai.strftime('%Y-%m-%d') if milostones.tanggal_selesai else None,
             # ... (kolom lainnya)
         }
 

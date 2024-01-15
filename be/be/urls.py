@@ -26,7 +26,7 @@ urlpatterns = [
     path('api/', include('projectcharter.urls')),
     path('api/', include('description.urls')),
     path('api/', include('deliverable.urls')),
-    #path('api/', include('detailmilostones.urls')),
+    # path('api/', include('detailmilostones.urls')),
     path('api/', include('milostones.urls')),
     path('api/', include('detail_responsibilities.urls')),
     path('api/', include('responsibility.urls')),

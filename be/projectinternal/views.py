@@ -18,6 +18,15 @@ class ProjectInternalListCreateView(ListCreateAPIView):
     queryset = ProjectInternal.objects.all()
     serializer_class = ProjectInternalSerializer
 
+    def get_queryset(self):
+        queryset = ProjectInternal.objects.all()
+        id_user = self.request.query_params.get('id_user', None)
+        
+        if id_user:
+            queryset = queryset.filter(id_user=id_user)
+        
+        return queryset
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset()).order_by('id_project')
         serializer = self.get_serializer(queryset, many=True)
@@ -113,6 +122,15 @@ class ProjectInternalRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [CustomJWTAuthentication]
     queryset = ProjectInternal.objects.all()
     serializer_class = ProjectInternalSerializer
+
+    def get_queryset(self):
+        queryset = ProjectInternal.objects.all()
+        id_user = self.request.query_params.get('id_user', None)
+        
+        if id_user:
+            queryset = queryset.filter(id_user=id_user)
+        
+        return queryset 
 
     def perform_update(self, serializer):
         old_photo_hld = serializer.instance.hld
