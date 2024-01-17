@@ -1,7 +1,9 @@
-# from django.urls import path
-# from .views import StatusListCreateView
+# urls.py
 
-# urlpatterns = [
-#     path('status/', StatusListCreateView.as_view(), name='status-list-create'),
-#     # ... mungkin ada path lainnya ...
-# ]
+from django.urls import path
+from .views import StatusList
+
+urlpatterns = [
+    path('status/', StatusList.as_view(), name='status-list'),
+    # Tambahkan path lainnya sesuai kebutuhan
+]

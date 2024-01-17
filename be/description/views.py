@@ -13,7 +13,6 @@ from rest_framework import serializers
 
 class DescriptionListView(ListCreateAPIView):
     authentication_classes = [CustomJWTAuthentication]
-
     queryset = Description.objects.all()
     serializer_class = DescriptionSerializer
 
@@ -160,7 +159,7 @@ class DescriptionDetailView(RetrieveUpdateDestroyAPIView):
             'risk': description.risk,
             'key_stakeholders': description.key_stakeholders,
             # ... (Tambahkan kolom lainnya jika diperlukan)
-        }
+        }   
 
         ActivityLog.objects.create(
             id_user=user_instance,

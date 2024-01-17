@@ -1,7 +1,7 @@
-# serializers.py
 from rest_framework import serializers
 from .models import Description, ProjectCharter, User, ActivityLog
 import json
+from urllib.parse import urlparse
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,6 +22,15 @@ class DescriptionSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['status_description']
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Modifikasi URL hlr sesuai kebutuhan Anda
+        if representation['hlr']:
+            url_parts = urlparse(representation['hlr'])
+            representation['hlr'] = url_parts.path
+
+        return representation
 
     def validate(self, data):
         hlr = data.get('hlr', '')

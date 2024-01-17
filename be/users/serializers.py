@@ -3,11 +3,22 @@ from django.db.models import Q
 import bcrypt
 from rest_framework import serializers
 from .models import User
+from urllib.parse import urlparse
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id_user', 'hak_akses', 'nama', 'email', 'phone', 'jabatan', 'profile', 'password']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Modifikasi URL struktur_organisasi sesuai kebutuhan Anda
+        if representation['profile']:
+            url_parts = urlparse(representation['profile'])
+            representation['profile'] = url_parts.path
+
+        return representation
 
     def validate_email(self, value):
         user_id = self.instance.id_user if self.instance else None

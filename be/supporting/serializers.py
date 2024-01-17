@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import SupportingDoc, ProjectCharter, User, ActivityLog
 import json
 from django.shortcuts import get_object_or_404
+from urllib.parse import urlparse
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,6 +22,16 @@ class SupportingDocSerializer(serializers.ModelSerializer):
         model = SupportingDoc
         fields = '__all__'
         read_only_fields = ['status_supportingdoc']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Modifikasi URL struktur_organisasi sesuai kebutuhan Anda
+        if representation['document']:
+            url_parts = urlparse(representation['document'])
+            representation['document'] = url_parts.path
+
+        return representation
 
     def validate(self, data):
         document_name = data.get('document_name', '')

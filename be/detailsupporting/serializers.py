@@ -2,6 +2,7 @@
 from rest_framework import serializers
 from .models import RoleResponsibilities, ProjectCharter, User, ActivityLog
 import json
+from urllib.parse import urlparse
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,6 +22,16 @@ class RoleResponsibilitiesSerializer(serializers.ModelSerializer):
         model = RoleResponsibilities
         fields = '__all__'
         read_only_fields = ['status_responsibilities']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Modifikasi URL struktur_organisasi sesuai kebutuhan Anda
+        if representation['struktur_organisasi']:
+            url_parts = urlparse(representation['struktur_organisasi'])
+            representation['struktur_organisasi'] = url_parts.path
+
+        return representation
 
 
     def validate(self, data):

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import ProjectInternal, User, ActivityLog
 import json
 from django.shortcuts import get_object_or_404
+from urllib.parse import urlparse
 
 class ActivityLogSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,6 +29,19 @@ class ProjectInternalSerializer(serializers.ModelSerializer):
             'end_date': {'required': False},
         }
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Modifikasi URL struktur_organisasi sesuai kebutuhan Anda
+        if representation['hld']:
+            url_parts = urlparse(representation['hld'])
+            representation['hld'] = url_parts.path
+        if representation['lld']:
+            url_parts = urlparse(representation['lld'])
+            representation['lld'] = url_parts.path
+
+        return representation
+    
     def get_total_weeks(self, instance):
         start_date = instance.start_date
         end_date = instance.end_date
