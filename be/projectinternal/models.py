@@ -15,13 +15,13 @@ class User(models.Model):
         db_table = 'user'
 
 class ProjectStatus(models.TextChoices):
-    ON_GOING = 'ON_GOING', 'Ongoing'
-    DROPPED = 'DROPPED', 'Dropped'
-    FINISH = 'FINISH', 'Finish'
+    On_Going = 'On_Going', 'Ongoing'
+    Dropped = 'Dropped', 'Dropped'
+    Finish = 'Finish', 'Finish'
 
 class ProjectInternal(models.Model):
     id_project = models.AutoField(primary_key=True)
-    status = models.TextField(choices=ProjectStatus.choices, default=ProjectStatus.ON_GOING)
+    status = models.TextField(choices=ProjectStatus.choices, default=ProjectStatus.On_Going)
     requester = models.TextField(blank=True, null=True)
     application_name = models.TextField(blank=True, null=True)
     start_date = models.DateField(null=True, blank=True)

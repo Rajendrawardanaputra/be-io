@@ -1,5 +1,3 @@
-# views.py
-
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,6 +5,7 @@ from .models import DetailMainPower, ActivityLog
 from .serializers import DetailMainPowerSerializer, DetailMainPowerListSerializer
 from be.middleware.token_middleware import CustomJWTAuthentication
 from rest_framework import status
+from django.db.models import Sum
 
 class RoleListView(APIView):
     def get(self, request, *args, **kwargs):
@@ -75,10 +74,16 @@ class DetailMainPowerListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(id_project=id_project)
 
         serializer = self.get_serializer(queryset, many=True)
+
+        # Hitung total keseluruhan dari setiap total_man_rate
+        total_man_rate_all = queryset.aggregate(Sum('total_man_rate'))['total_man_rate__sum']
+
         response_data = {
             'message': 'Data berhasil diambil',
-            'data': serializer.data
+            'data': serializer.data,
+            'total_man_rate_all': total_man_rate_all  # Tambahkan total keseluruhan ke respons
         }
+
         return Response(response_data, status=status.HTTP_200_OK)
 
 class DetailMainPowerDetailView(generics.RetrieveUpdateDestroyAPIView):

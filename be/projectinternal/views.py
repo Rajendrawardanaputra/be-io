@@ -49,15 +49,15 @@ class ProjectInternalListCreateView(ListCreateAPIView):
 
     def get_response_data(self, queryset, serialized_data):
         total_projects = queryset.count()
-        total_ON_GOING = queryset.filter(status='ON_GOING').count()
-        total_DROPPED = queryset.filter(status='DROPPED').count()
-        total_FINISH = queryset.filter(status='FINISH').count()
+        total_ON_GOING = queryset.filter(status='On_Going').count()
+        total_DROPPED = queryset.filter(status='Dropped').count()
+        total_FINISH = queryset.filter(status='Finish').count()
 
         return {
             'total_projects': total_projects,
-            'total_ON_GOING': total_ON_GOING,
-            'total_DROPPED': total_DROPPED,
-            'total_FINISH': total_FINISH,
+            'total_On_Going': total_ON_GOING,
+            'total_Dropped': total_DROPPED,
+            'total_Finish': total_FINISH,
             'projects': serialized_data,
         }
     
@@ -218,10 +218,11 @@ class ProjectInternalRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
 
     def log_activity(self, user_id, action, name_table, project, old_value=None, new_value=None):
         user_instance = get_object_or_404(User, id_user=user_id)
-    
-        object_data = {
+
+    # Check if the provided project is a ProjectInternal instance
+        if isinstance(project, ProjectInternal):
+         object_data = {
             'id_project': project.id_project,
-            'status': project.status,
             'requester': project.requester,
             'application_name': project.application_name,
             'start_date': project.start_date.strftime('%Y-%m-%d') if project.start_date else None,
@@ -230,19 +231,23 @@ class ProjectInternalRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
             'lld': str(project.lld),
             'brd': project.brd,
             'sequence_number': project.sequence_number,
-        }
+         }
+        else:
+        # If project is an ImageFieldFile, set id_project to None or any default value
+         object_data = {
+             'id_project': None,
+         }
 
         if old_value is not None and new_value is not None:
-            object_data[name_table] = {
-                'old': str(old_value),
-                'new': str(new_value),
-            }
+         object_data[name_table] = {
+            'old': str(old_value),
+            'new': str(new_value),
+         }
 
         ActivityLog.objects.create(
-            id_user=user_instance,
-            action=action,
-            name_table=name_table,
-            object=json.dumps(object_data),
-        )
-
+         id_user=user_instance,
+         action=action,
+         name_table=name_table,
+         object=json.dumps(object_data),
+     )
 # Seluruh bagian komentar yang tidak digunakan telah saya hapus agar kode menjadi lebih bersih.
