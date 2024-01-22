@@ -11,7 +11,7 @@ class ProjectCharter(models.Model):
      id_charter = models.AutoField(primary_key=True)
      project_description = models.CharField(max_length=255, blank=True, null=True)
      createdAt = models.DateTimeField(auto_now_add=True)   #Field name made lowercase.
-     status_project = models.CharField(max_length=255, blank=True, null=True)
+     status_project = models.CharField(max_length=255, choices=[('draft', 'Draft'), ('done', 'Done')], default='draft')
      id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user', blank=True, null=True)
      updateAt = models.DateTimeField(auto_now=True)   #Field name made lowercase.
 
@@ -127,21 +127,25 @@ class Deliverable(models.Model):
          db_table = 'deliverable'
 
 class Approvedby(models.Model):
-     nama = models.CharField(max_length=255, blank=True, null=True)
-     cc_to = models.CharField(max_length=255, blank=True, null=True)
-     tanggal = models.DateField(blank=True, null=True)
-     id_approv = models.AutoField(primary_key=True)
-     note = models.TextField(blank=True, null=True)
-     title = models.CharField(max_length=255, blank=True, null=True)
-     id_charter = models.ForeignKey('ProjectCharter', models.DO_NOTHING, db_column='id_charter', blank=True, null=True)
-     id_user = models.ForeignKey('User', models.DO_NOTHING, db_column='id_user', blank=True, null=True)
-     createdAt = models.DateTimeField(auto_now_add=True)   #Field name made lowercase.
-     updatedAt = models.DateTimeField(auto_now=True)
-     status_approvedby = models.TextField(blank=True, null=True)
-     nama1 = models.CharField(max_length=255, blank=True, null=True)
-     title1 = models.CharField(max_length=255, blank=True, null=True)
-     cc_to1 = models.CharField(max_length=255, blank=True, null=True)
-     tanggal1 = models.DateField(blank=True, null=True)
+    nama = models.CharField(max_length=255, blank=True, null=True)
+    cc_to = models.CharField(max_length=255, blank=True, null=True)
+    tanggal = models.DateField(blank=True, null=True)
+    id_approv = models.AutoField(primary_key=True)
+    note = models.TextField(blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    id_charter = models.ForeignKey('ProjectCharter', models.DO_NOTHING, db_column='id_charter', blank=True, null=True)
+    id_user = models.IntegerField(blank=True, null=True)
+    updatedat = models.DateTimeField(db_column='updatedAt', blank=True, null=True)  # Field name made lowercase.
+    createdat = models.DateTimeField(db_column='createdAt', blank=True, null=True)  # Field name made lowercase.
+    status_approvedby = models.TextField(blank=True, null=True)  # This field type is a guess.
+    nama1 = models.CharField(max_length=255, blank=True, null=True)
+    title1 = models.CharField(max_length=255, blank=True, null=True)
+    cc_to1 = models.CharField(max_length=255, blank=True, null=True)
+    tanggal1 = models.DateField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'approvedBy'
 
 
 
@@ -161,6 +165,38 @@ class Status(models.Model):
      class Meta:
          managed = False
          db_table = 'status'
+
+     def save(self, *args, **kwargs):
+        # Ambil status dari setiap atribut terkait
+        status_values = [
+            self.id_charter.status_project,
+            self.id_description.status_description,
+            self.id_deliverable.status_deliverable,
+            self.id_milostone.status_milostones,
+            self.id_responsibilities.status_responsibilities,
+            self.id_responsibility.status_responsibility,
+            self.id_supporting.status_supportingdoc,
+            self.id_approv.status_approvedby,
+            self.id_detail_roleresponsibilities.status_detailresponsibilities,
+        ]
+
+        # Hilangkan nilai-nilai yang bernilai `null` (jika ada)
+        status_values = [status for status in status_values if status is not None]
+
+        # Jika tidak ada status yang "draft" dan setidaknya satu status adalah "in progress",
+        # maka status keseluruhan adalah "in progress"
+        if "draft" in status_values:
+            self.status = "draft"
+        elif "in progress" in status_values:
+            self.status = "in progress"
+        # Jika semua status adalah "done", maka status keseluruhan adalah "done"
+        elif all(status == "done" for status in status_values):
+            self.status = "done"
+        # Jika tidak ada status yang "draft" dan tidak ada yang "in progress", maka status keseluruhan adalah "done"
+        else:
+            self.status = "done"
+
+        super().save(*args, **kwargs)
 
 class User(models.Model):
      id_user = models.AutoField(primary_key=True)

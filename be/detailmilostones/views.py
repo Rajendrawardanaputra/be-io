@@ -1,23 +1,17 @@
-# views.py
 from rest_framework import generics
-from .models import Status, ProjectCharter, Description, SupportingDoc, Responsibility, Milostones, RoleResponsibilities, DetailResponsibilities, Deliverable, Approvedby, User
-from .serializers import StatusSerializer, UserSerializer, ProjectCharterSerializer, DescriptionSerializer, SupportingDocSerializer, ResponsibilitySerializer, MilostonesSerializer, RoleResponsibilitiesSerializer, DetailResponsibilitiesSerializer, DeliverableSerializer, ApprovedbySerializer
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from .models import Status
+from .serializers import StatusSerializer
+from be.middleware.token_middleware import CustomJWTAuthentication
 
-class StatusList(generics.ListCreateAPIView):
+class StatusListCreateView(generics.ListCreateAPIView):
+    authentication_classes = [CustomJWTAuthentication]
     queryset = Status.objects.all()
     serializer_class = StatusSerializer
 
-    def get_serializer_context(self):
-        context = super(StatusList, self).get_serializer_context()
-        # Tambahan context untuk setiap model yang digunakan dalam Status
-        context['project_charter'] = ProjectCharter.objects.all()
-        context['description'] = Description.objects.all()
-        context['supporting_doc'] = SupportingDoc.objects.all()
-        context['responsibility'] = Responsibility.objects.all()
-        context['milostones'] = Milostones.objects.all()
-        context['role_responsibilities'] = RoleResponsibilities.objects.all()
-        context['detail_responsibilities'] = DetailResponsibilities.objects.all()
-        context['deliverable'] = Deliverable.objects.all()
-        context['approvedby'] = Approvedby.objects.all()
-        context['user'] = User.objects.all()
-        return context
+
+class StatusDetailView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes = [CustomJWTAuthentication]
+    queryset = Status.objects.all()
+    serializer_class = StatusSerializer
