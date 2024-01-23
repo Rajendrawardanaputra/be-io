@@ -169,35 +169,32 @@ class Status(models.Model):
      def save(self, *args, **kwargs):
         # Ambil status dari setiap atribut terkait
         status_values = [
-            self.id_charter.status_project,
-            self.id_description.status_description,
-            self.id_deliverable.status_deliverable,
-            self.id_milostone.status_milostones,
-            self.id_responsibilities.status_responsibilities,
-            self.id_responsibility.status_responsibility,
-            self.id_supporting.status_supportingdoc,
-            self.id_approv.status_approvedby,
-            self.id_detail_roleresponsibilities.status_detailresponsibilities,
+            self.id_charter.status_project if self.id_charter else None,
+            self.id_description.status_description if self.id_description else None,
+            self.id_deliverable.status_deliverable if self.id_deliverable else None,
+            self.id_milostone.status_milostones if self.id_milostone else None,
+            self.id_responsibilities.status_responsibilities if self.id_responsibilities else None,
+            self.id_responsibility.status_responsibility if self.id_responsibility else None,
+            self.id_supporting.status_supportingdoc if self.id_supporting else None,
+            self.id_approv.status_approvedby if self.id_approv else None,
+            self.id_detail_roleresponsibilities.status_detailresponsibilities if self.id_detail_roleresponsibilities else None,
         ]
 
-        # Hilangkan nilai-nilai yang bernilai `null` (jika ada)
+        # Hilangkan nilai-nilai yang bernilai `None` (jika ada)
         status_values = [status for status in status_values if status is not None]
 
-        # Jika tidak ada status yang "draft" dan setidaknya satu status adalah "in progress",
-        # maka status keseluruhan adalah "in progress"
+        # Jika ada yang "Draft", maka status keseluruhan adalah "Draft"
         if "draft" in status_values:
-            self.status = "draft"
-        elif "in progress" in status_values:
-            self.status = "in progress"
-        # Jika semua status adalah "done", maka status keseluruhan adalah "done"
-        elif all(status == "done" for status in status_values):
-            self.status = "done"
-        # Jika tidak ada status yang "draft" dan tidak ada yang "in progress", maka status keseluruhan adalah "done"
+            self.status = "Draft"
+        # Jika semua status adalah "done", maka status keseluruhan adalah "Done"
+        elif all(status.lower() == "done" for status in status_values):
+            self.status = "Done"
+        # Jika tidak ada yang "Draft" dan tidak semua "Done", maka status keseluruhan adalah None (kosong)
         else:
-            self.status = "done"
+            self.status = None
 
         super().save(*args, **kwargs)
-
+        
 class User(models.Model):
      id_user = models.AutoField(primary_key=True)
      password = models.CharField(max_length=255)
