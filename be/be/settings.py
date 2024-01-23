@@ -25,7 +25,7 @@ SECRET_KEY = 'projectinternalorder'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'z8v4553q-8000.asse.devtunnels.ms']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'beinternal.jesica.online']
 
 
 APPEND_SLASH = False
@@ -102,7 +102,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'db',
         'USER': 'postgres',
-        'PASSWORD': '1234',
+        'PASSWORD': '0000',
         'PORT': '5432',
         'HOST': 'localhost',
         'OPTIONS': {
@@ -161,9 +161,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # AWS_S3_CUSTOM_DOMAIN=None
 
 ALLOWED_HOSTS = []
-AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9000'
-AWS_ACCESS_KEY_ID = 'CF2yrK2BJGimkr2JJ5FO'
-AWS_SECRET_ACCESS_KEY = 'iOCgyIGcbzHfjihl4iSdoi63x1Hao2UitXVgWIHI'
+AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9006'
+AWS_ACCESS_KEY_ID = 'XhIHS28Xo41aqga5HATZ'
+AWS_SECRET_ACCESS_KEY = 'kGrky8NnaI7FqpTMXTMlAgqtSTcCENTbzIS1O7g1'
 AWS_STORAGE_BUCKET_NAME = 'internalorder'
 
 # Internationalization
@@ -236,7 +236,8 @@ AUTHENTICATION_BACKENDS = [
 CORS_ORIGIN_ALLOW_ALL = False
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000"
+    "http://localhost:3000", "https://intenal.jesica.online",
+    "http://localhost:3140"
 ]
 
 CORS_ALLOW_METHODS = [
