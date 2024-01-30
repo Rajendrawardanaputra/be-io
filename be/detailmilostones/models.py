@@ -2,12 +2,12 @@ from django.db import models
 
 
 class ProjectCharter(models.Model):
-     project_name = models.CharField(blank=True, null=True)
-     project_manager = models.CharField(blank=True, null=True)
-     customer = models.CharField(blank=True, null=True)
-     end_customer = models.CharField(blank=True, null=True)
-     bu_delivery = models.CharField(blank=True, null=True)
-     bu_related = models.CharField(blank=True, null=True)
+     project_name = models.CharField(max_length=255, blank=True, null=True)
+     project_manager = models.CharField(max_length=255, blank=True, null=True)
+     customer = models.CharField(max_length=255, blank=True, null=True)
+     end_customer = models.CharField(max_length=255, blank=True, null=True)
+     bu_delivery = models.CharField(max_length=255, blank=True, null=True)
+     bu_related = models.CharField(max_length=255, blank=True, null=True)
      id_charter = models.AutoField(primary_key=True)
      project_description = models.CharField(max_length=255, blank=True, null=True)
      createdAt = models.DateTimeField(auto_now_add=True)   #Field name made lowercase.
