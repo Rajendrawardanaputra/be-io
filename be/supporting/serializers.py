@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from .models import SupportingDoc, ProjectCharter, User, ActivityLog
-import json
-from django.shortcuts import get_object_or_404
 from urllib.parse import urlparse
+import json
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,27 +19,17 @@ class SupportingDocSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SupportingDoc
-        fields = '__all__'
+        exclude = ['document'] 
         read_only_fields = ['status_supportingdoc']
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-
-        # Modifikasi URL struktur_organisasi sesuai kebutuhan Anda
-        if representation['document']:
-            url_parts = urlparse(representation['document'])
-            representation['document'] = url_parts.path
-
-        return representation
 
     def validate(self, data):
         document_name = data.get('document_name', '')
         notes = data.get('notes', '')
-        document = data.get('document', '')
         id_charter = data.get('id_charter')
         id_user = data.get('id_user')
 
-        if document_name and notes and document and id_charter is not None and id_user is not None:
+        if document_name and notes and id_charter is not None and id_user is not None:
             # Jika semua field terisi, atur status_supportingdoc ke 'done'
             data['status_supportingdoc'] = 'done'
         else:
@@ -54,11 +43,10 @@ class SupportingDocSerializer(serializers.ModelSerializer):
 
         document_name = supporting.document_name
         notes = supporting.notes
-        document = supporting.document
         id_charter = supporting.id_charter
         id_user = supporting.id_user_id
 
-        if document_name and notes and document and id_charter is not None and id_user is not None:
+        if document_name and notes and id_charter is not None and id_user is not None:
             # Jika semua field terisi, atur status_supportingdoc ke 'done'
             supporting.status_supportingdoc = 'done'
         else:
@@ -75,11 +63,10 @@ class SupportingDocSerializer(serializers.ModelSerializer):
 
         document_name = instance.document_name
         notes = instance.notes
-        document = instance.document
         id_charter = instance.id_charter
         id_user = instance.id_user_id
 
-        if document_name and notes and document and id_charter is not None and id_user is not None:
+        if document_name and notes and id_charter is not None and id_user is not None:
             # Jika semua field terisi, atur status_supportingdoc ke 'done'
             instance.status_supportingdoc = 'done'
         else:
@@ -109,3 +96,22 @@ class SupportingDocSerializer(serializers.ModelSerializer):
         user_id = instance.id_user.id_user
         self.log_activity(user_id, 'deleted', 'supporting', instance)
         instance.delete()
+
+class DocumentUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportingDoc
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Modifikasi URL struktur_organisasi sesuai kebutuhan Anda
+        if representation['document']:
+            url_parts = urlparse(representation['document'])
+            representation['document'] = url_parts.path
+
+        return representation
+
+class SupportingListSerializer(serializers.ListSerializer):
+    child = SupportingDocSerializer()
+

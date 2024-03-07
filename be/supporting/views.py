@@ -2,7 +2,7 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from rest_framework.response import Response
 from rest_framework import status
 from .models import SupportingDoc, ActivityLog, User
-from .serializers import SupportingDocSerializer
+from .serializers import SupportingDocSerializer, DocumentUploadSerializer, SupportingListSerializer
 import boto3
 from datetime import datetime
 from django.conf import settings
@@ -16,43 +16,28 @@ class SupportingDocListView(ListCreateAPIView):
     authentication_classes = [CustomJWTAuthentication]
     serializer_class = SupportingDocSerializer
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST' and isinstance(self.request.data, list):
+            return SupportingListSerializer
+        return SupportingDocSerializer
+
+    
     def get_queryset(self):
         id_charter = self.request.query_params.get('id_charter')
         if id_charter:
             return SupportingDoc.objects.filter(id_charter=id_charter)
         return SupportingDoc.objects.all()
-
+    
     def perform_create(self, serializer):
-        validated_data = serializer.validated_data
-        file_document = validated_data.get('document')
+        supporting_list = serializer.save()
 
-        if file_document:
-            current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
+        for supporting in supporting_list:
+            user_id = supporting.id_user.id_user
+            self.log_activity(user_id, 'created', supporting)
 
-            s3 = boto3.resource('s3', endpoint_url=settings.AWS_S3_ENDPOINT_URL,
-                                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-            file_document_name = f"document/{current_datetime}_{file_document.name}"
-            file_document_url = f"/internalorder/{file_document_name}"
 
-            serializer.save(document=file_document_url, status_supportingdoc='done')
-
-            s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
-                Key=file_document_name, Body=file_document.read(), ContentType=file_document.content_type)
-
-            # Memanggil log_activity dengan informasi yang sesuai
-            self.log_activity(serializer.validated_data.get('id_user').id_user, 'created', serializer.instance)
-
-            return Response({"message": "Document diunggah", "document": file_document_url}, status=status.HTTP_201_CREATED)
-        else:
-            status_supportingdoc = 'draft' if any(value in [None, ""] for key, value in validated_data.items() if key != 'status_supportingdoc') else 'done'
-            serializer.save(status_supportingdoc=status_supportingdoc)
-
-            # Memanggil log_activity dengan informasi yang sesuai
-            self.log_activity(serializer.validated_data.get('id_user').id_user, 'created', serializer.instance)
-
-            return Response({"message": "Objek Description dibuat tanpa file document"}, status=status.HTTP_201_CREATED)
 
     def log_activity(self, user_id, action, supporting):
         user_instance = get_object_or_404(User, id_user=user_id)
@@ -119,14 +104,14 @@ class SupportingDocDetailView(RetrieveUpdateDestroyAPIView):
         serializer.save(**data)
 
         # Menambahkan log activity untuk update
-        self.log_activity(serializer.instance.id_user.pk, 'updated', 'SupportingDoc', serializer.instance)
+        self.log_activity(serializer.instance.id_user.pk, 'updated', serializer.instance)
 
     def perform_destroy(self, instance):
         # Menambahkan log activity untuk delete
-        self.log_activity(instance.id_user.pk, 'deleted', 'SupportingDoc', instance)
+        self.log_activity(instance.id_user.pk, 'deleted', instance)
         instance.delete()
 
-    def log_activity(self, user_id, action, SupportingDoc, supporting):
+    def log_activity(self, user_id, action, supporting):
         user_instance = get_object_or_404(User, id_user=user_id)
 
         object_data = {
@@ -139,6 +124,31 @@ class SupportingDocDetailView(RetrieveUpdateDestroyAPIView):
         ActivityLog.objects.create(
             id_user=user_instance,
             action=action,
-            name_table=SupportingDoc,
+            name_table='SupportingDoc',
             object=json.dumps(object_data),
         )
+
+
+class DocumentUploadView(ListCreateAPIView):
+    authentication_classes = [CustomJWTAuthentication]
+    serializer_class = DocumentUploadSerializer
+    queryset = SupportingDoc.objects.all()
+
+    def perform_create(self, serializer):
+        validated_data = serializer.validated_data
+        file_document = validated_data.get('document')
+
+        if file_document:
+            current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
+
+            s3 = boto3.resource('s3', endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+
+            file_document_name = f"document/{current_datetime}_{file_document.name}"
+            file_document_url = f"/internalorder/{file_document_name}"
+
+            serializer.save(document=file_document_url, status_supportingdoc='done')
+
+            s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME).put_object(
+                Key=file_document_name, Body=file_document.read(), ContentType=file_document.content_type)
