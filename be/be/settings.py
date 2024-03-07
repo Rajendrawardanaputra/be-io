@@ -25,7 +25,7 @@ SECRET_KEY = 'projectinternalorder'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'z8v4553q-8000.asse.devtunnels.ms']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'z8v4553q-8000.asse.devtunnels.ms', 'beinternal.jesica.online']
 
 
 APPEND_SLASH = False
@@ -160,10 +160,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # AWS_S3_SECURE_URLS = False
 # AWS_S3_CUSTOM_DOMAIN=None
 
-ALLOWED_HOSTS = []
-AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9000'
-AWS_ACCESS_KEY_ID = 'CF2yrK2BJGimkr2JJ5FO'
-AWS_SECRET_ACCESS_KEY = 'iOCgyIGcbzHfjihl4iSdoi63x1Hao2UitXVgWIHI'
+ALLOWED_HOSTS = ['beinternal.jesica.online']
+AWS_S3_ENDPOINT_URL = 'http://127.0.0.1:9006'
+AWS_ACCESS_KEY_ID = 'T70PSe8EnuaUsfZ42hUF'
+AWS_SECRET_ACCESS_KEY = 'Y0vtXT4om002IGm3N3ejQ3xUahz8Ex8kAUomseXH'
 AWS_STORAGE_BUCKET_NAME = 'internalorder'
 
 # Internationalization
@@ -236,7 +236,8 @@ AUTHENTICATION_BACKENDS = [
 CORS_ORIGIN_ALLOW_ALL = False
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000"
+    "http://localhost:3000", "https://internal.jesica.online",
+    "http://localhost:3140"
 ]
 
 CORS_ALLOW_METHODS = [
