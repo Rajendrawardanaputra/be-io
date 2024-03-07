@@ -250,4 +250,4 @@ class ProjectInternalRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
          name_table=name_table,
          object=json.dumps(object_data),
      )
-# Seluruh bagian komentar yang tidak digunakan telah saya hapus agar kode menjadi lebih bersih.
+

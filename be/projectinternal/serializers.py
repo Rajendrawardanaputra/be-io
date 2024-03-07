@@ -46,9 +46,12 @@ class ProjectInternalSerializer(serializers.ModelSerializer):
         start_date = instance.start_date
         end_date = instance.end_date
 
-        delta = end_date - start_date
-        total_weeks = (delta.days // 7) + (delta.days % 30 >= 7)
-        return total_weeks
+        if start_date and end_date:
+            delta = end_date - start_date
+            total_weeks = (delta.days // 7) + (delta.days % 30 >= 7)
+            return total_weeks
+        else:
+            return None
 
     def validate(self, data):
         start_date = data.get('start_date')
@@ -109,3 +112,4 @@ class ProjectInternalSerializer(serializers.ModelSerializer):
                 name_table='ProjectInternal',
                 object=json.dumps(object_data),
             )
+
